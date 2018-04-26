@@ -219,6 +219,8 @@ func (m *MTProto) reconnect(newaddr string) error {
 
 	// renew connection
 	if newaddr != m.network.Address() {
+		m.queueSend = make(chan packetToSend, 64)
+		m.stopRoutines = make(chan struct{})
 		m.network, err = NewNetwork(true, m.authkeyfile, m.queueSend, newaddr, m.IPv6)
 	}
 
