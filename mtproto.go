@@ -3,7 +3,6 @@ package mtproto
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"runtime"
 	"sync"
@@ -154,6 +153,7 @@ func NewMTProto(id int32, hash string, opts ...Option) (*MTProto, error) {
 }
 
 func (m *MTProto) Connect() (err error) {
+	fmt.Printf("start to connect\n")
 	m.network.Connect()
 
 	// start goroutines
@@ -194,46 +194,53 @@ func (m *MTProto) Connect() (err error) {
 
 	// start keep alive ping
 	go m.pingRoutine()
-
+	fmt.Printf("connect finish\n")
 	return
 }
 
 func (m *MTProto) Disconnect() error {
 	// stop ping, send and read routine by closing channel stopRoutines
+	// m.stopRoutines <- struct{}{}
+	// m.stopRoutines <- struct{}{}
+	// m.stopRoutines <- struct{}{}
 	close(m.stopRoutines)
 
 	// Wait until all goroutines stopped
 	m.allDone.Wait()
 
-	// close send queue
-	close(m.queueSend)
+	// // close send queue
+	// close(m.queueSend)
 
 	return m.network.Disconnect()
 }
 
 func (m *MTProto) reconnect(newaddr string) error {
+	fmt.Printf("start reconnect\n")
 	err := m.Disconnect()
 	if err != nil {
 		return err
 	}
 
+	m.stopRoutines = make(chan struct{})
 	// renew connection
 	if newaddr != m.network.Address() {
-		m.queueSend = make(chan packetToSend, 64)
-		m.stopRoutines = make(chan struct{})
+		// m.queueSend = make(chan packetToSend, 64)
 		m.network, err = NewNetwork(true, m.authkeyfile, m.queueSend, newaddr, m.IPv6)
 	}
 
 	err = m.Connect()
+	fmt.Printf("stop reconnect\n")
 	return err
 }
 
 func (m *MTProto) pingRoutine() {
+	fmt.Printf("ping start\n")
 	m.allDone.Add(1)
 	defer func() { m.allDone.Done() }()
 	for {
 		select {
 		case <-m.stopRoutines:
+			fmt.Printf("ping stop\n")
 			return
 		case <-time.After(60 * time.Second):
 			// TODO: m.InvokeSync()?
@@ -243,22 +250,26 @@ func (m *MTProto) pingRoutine() {
 }
 
 func (m *MTProto) sendRoutine() {
+	fmt.Printf("send start\n")
 	m.allDone.Add(1)
 	defer func() { m.allDone.Done() }()
 	for {
 		select {
 		case <-m.stopRoutines:
+			fmt.Printf("send stop\n")
 			return
 		case x := <-m.queueSend:
+			fmt.Printf("send: %+v\n", x.msg)
 			err := m.network.Send(x.msg, x.resp)
 			if err != nil {
-				log.Fatalln("SendRoutine:", err)
+				fmt.Printf("SendRoutine:", err)
 			}
 		}
 	}
 }
 
 func (m *MTProto) readRoutine() {
+	fmt.Printf("read start\n")
 	m.allDone.Add(1)
 	defer func() { m.allDone.Done() }()
 	for {
@@ -266,24 +277,27 @@ func (m *MTProto) readRoutine() {
 		ch := make(chan interface{}, 1)
 		go func(ch chan<- interface{}) {
 			data, err := m.network.Read()
+			// fmt.Printf("data: %+v, error: %v\n", data, err)
 			if err == io.EOF {
 				// TODO: Last message to the server was lost. Fix it.
 				// Connection closed by server, trying to reconnect
 				err = m.reconnect(m.network.Address())
 				if err != nil {
-					log.Fatalln("ReadRoutine: ", err)
+					fmt.Printf("ReadRoutine: %v", err)
 				}
 			}
 			if err != nil {
-				log.Fatalln("ReadRoutine: ", err)
+				fmt.Printf("ReadRoutine: %v", err)
 			}
 			ch <- data
 		}(ch)
 
 		select {
 		case <-m.stopRoutines:
+			fmt.Printf("read stop\n")
 			return
 		case data := <-ch:
+			// fmt.Printf("data to process: %+v\n", data)
 			if data == nil {
 				return
 			}
@@ -296,6 +310,7 @@ func (m *MTProto) InvokeSync(msg TL) (*TL, error) {
 	x := <-m.InvokeAsync(msg)
 
 	if x.err != nil {
+		fmt.Printf("error: %v\n", x.err)
 		if err, ok := x.err.(TL_rpc_error); ok {
 			switch err.Error_code {
 			case errorSeeOther:
@@ -308,6 +323,7 @@ func (m *MTProto) InvokeSync(msg TL) (*TL, error) {
 					}
 				}
 				newDcAddr, ok := m.dclist[newDc]
+				fmt.Printf("newdc addr: %s\n", newDcAddr)
 				if !ok {
 					return nil, fmt.Errorf("wrong DC index: %d", newDc)
 				}

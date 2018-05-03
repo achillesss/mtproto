@@ -163,21 +163,37 @@ func (e TL_inputUserSelf) encode() []byte {
 	return x.buf
 }
 
-// inputUser#d8292816 user_id:int access_hash:long = InputUser;
+// inputUserForeign#655e74ff user_id:int access_hash:long = InputUser;
 
-const crc_inputUser = 0xd8292816
+const crc_inputUserForeign = 0x655e74ff
 
-type TL_inputUser struct {
+type TL_inputUserForeign struct {
 	User_id     int32 // user_id:int
 	Access_hash int64 // access_hash:long
 }
 
-// Encoding TL_inputUser
-func (e TL_inputUser) encode() []byte {
+// Encoding TL_inputUserForeign
+func (e TL_inputUserForeign) encode() []byte {
 	x := NewEncodeBuf(512)
-	x.UInt(crc_inputUser)
+	x.UInt(crc_inputUserForeign)
 	x.Int(e.User_id)
 	x.Long(e.Access_hash)
+	return x.buf
+}
+
+// inputUserContact#86e94f65 user_id:int = InputUser;
+
+const crc_inputUserContact = 0x86e94f65
+
+type TL_inputUserContact struct {
+	User_id int32 // user_id:int
+}
+
+// Encoding TL_inputUserContact
+func (e TL_inputUserContact) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crc_inputUserContact)
+	x.Int(e.User_id)
 	return x.buf
 }
 
@@ -12685,34 +12701,55 @@ func (e TL_messages_getMessages) encode() []byte {
 	return x.buf
 }
 
-// messages.getDialogs#191ba9c5 flags:# exclude_pinned:flags.0?true offset_date:int offset_id:int offset_peer:InputPeer limit:int = messages.Dialogs;
+// messages.getDialogs#eccf1df6 offset:int max_id:int limit:int = messages.Dialogs;
 
-const crc_messages_getDialogs = 0x191ba9c5
+// * CHANGE to messages.getDialogs#eccf1df6 offset:int max_id:int limit:int = messages.Dialogs;
+const crc_messages_getDialogs = 0xeccf1df6
 
 type TL_messages_getDialogs struct {
-	Flags          int32
-	Exclude_pinned bool  // exclude_pinned:flags.0?true
-	Offset_date    int32 // offset_date:int
-	Offset_id      int32 // offset_id:int
-	Offset_peer    TL    // offset_peer:InputPeer
-	Limit          int32 // limit:int
+	Offset int32 // offset:int
+	MaxID  int32 // max_id:int
+	Limit  int32 // limit:int
 }
 
 // Encoding TL_messages_getDialogs
 func (e TL_messages_getDialogs) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crc_messages_getDialogs)
-	var flags int32
-	if e.Exclude_pinned {
-		flags |= (1 << 0)
-	}
-	x.Int(flags)
-	x.Int(e.Offset_date)
-	x.Int(e.Offset_id)
-	x.Bytes(e.Offset_peer.encode())
+	x.Int(e.Offset)
+	x.Int(e.MaxID)
 	x.Int(e.Limit)
 	return x.buf
 }
+
+// // messages.getDialogs#191ba9c5 flags:# exclude_pinned:flags.0?true offset_date:int offset_id:int offset_peer:InputPeer limit:int = messages.Dialogs;
+
+// const crc_messages_getDialogs = 0x191ba9c5
+
+// type TL_messages_getDialogs struct {
+// 	Flags          int32
+// 	Exclude_pinned bool  // exclude_pinned:flags.0?true
+// 	Offset_date    int32 // offset_date:int
+// 	Offset_id      int32 // offset_id:int
+// 	Offset_peer    TL    // offset_peer:InputPeer
+// 	Limit          int32 // limit:int
+// }
+
+// // Encoding TL_messages_getDialogs
+// func (e TL_messages_getDialogs) encode() []byte {
+// 	x := NewEncodeBuf(512)
+// 	x.UInt(crc_messages_getDialogs)
+// 	var flags int32
+// 	if e.Exclude_pinned {
+// 		flags |= (1 << 0)
+// 	}
+// 	x.Int(flags)
+// 	x.Int(e.Offset_date)
+// 	x.Int(e.Offset_id)
+// 	x.Bytes(e.Offset_peer.encode())
+// 	x.Int(e.Limit)
+// 	return x.buf
+// }
 
 // messages.getHistory#afa92846 peer:InputPeer offset_id:int offset_date:int add_offset:int limit:int max_id:int min_id:int = messages.Messages;
 
@@ -15761,6 +15798,53 @@ func (e TL_phone_saveCallDebug) encode() []byte {
 	x.Bytes(e.Debug.encode())
 	return x.buf
 }
+
+// // messages.statedMessage#d07ae726 message:Message chats:Vector<Chat> users:Vector<User> pts:int seq:int = messages.StatedMessage;
+
+// const crc_messages_statedMessage = 0xd07ae726
+
+// type TL_messages_statedMessage struct {
+// 	Message TL    // message
+// 	Chats   []TL  // List of chats mentioned in messages
+// 	Users   []TL  // List of users mentioned in messages and chats
+// 	Pts     int32 //Number of events occured in the text box
+// 	Seq     int32 //Number of sent messages
+// }
+
+// func (e TL_messages_statedMessage) encode() []byte {
+// 	x := NewEncodeBuf(512)
+// 	x.UInt(crc_messages_statedMessage)
+// 	x.Bytes(e.Message)
+// 	x.Vector(e.Chats)
+// 	x.Vector(e.Users)
+// 	x.Int(e.Pts)
+// 	x.Int(e.Seq)
+// 	return x.buf
+// }
+
+// // messages.statedMessages#969478bb messages:Vector<Message> chats:Vector<Chat> users:Vector<User> pts:int seq:int = messages.StatedMessages;
+
+// const crc_messages_statedMessages = 0x969478bb
+
+// type TL_messages_statedMessages struct {
+// 	Messages []TL  // List of messages
+// 	Chats    []TL  // List of chats mentioned in messages
+// 	Users    []TL  // List of users mentioned in messages and chats
+// 	Pts      int32 //Number of events occured in the text box
+// 	Seq      int32 //Number of sent messages
+// }
+
+// func (e TL_messages_statedMessages) encode() []byte {
+// 	x := NewEncodeBuf(512)
+// 	x.UInt(crc_messages_statedMessage)
+// 	x.Vector(e.Messages)
+// 	x.Vector(e.Chats)
+// 	x.Vector(e.Users)
+// 	x.Int(e.Pts)
+// 	x.Int(e.Seq)
+// 	return x.buf
+// }
+
 func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 	switch constructor {
 	case crc_boolFalse:
@@ -15798,10 +15882,14 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		r = TL_inputUserEmpty{}
 	case crc_inputUserSelf:
 		r = TL_inputUserSelf{}
-	case crc_inputUser:
-		r = TL_inputUser{
+	case crc_inputUserForeign:
+		r = TL_inputUserForeign{
 			User_id:     m.Int(),
 			Access_hash: m.Long(),
+		}
+	case crc_inputUserContact:
+		r = TL_inputUserContact{
+			User_id: m.Int(),
 		}
 	case crc_inputPhoneContact:
 		r = TL_inputPhoneContact{
@@ -20139,20 +20227,29 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			Id: m.VectorInt(),
 		}
 	case crc_messages_getDialogs:
-		flags := m.Int()
-		exclude_pinned := flags&(1<<0) != 0
-		offset_date := m.Int()
-		offset_id := m.Int()
-		offset_peer := m.Object()
+		offset := m.Int()
+		maxID := m.Int()
 		limit := m.Int()
 		r = TL_messages_getDialogs{
-			Flags:          flags,
-			Exclude_pinned: exclude_pinned,
-			Offset_date:    offset_date,
-			Offset_id:      offset_id,
-			Offset_peer:    offset_peer,
-			Limit:          limit,
+			Offset: offset,
+			MaxID:  maxID,
+			Limit:  limit,
 		}
+	// case crc_messages_getDialogs:
+	// 	flags := m.Int()
+	// 	exclude_pinned := flags&(1<<0) != 0
+	// 	offset_date := m.Int()
+	// 	offset_id := m.Int()
+	// 	offset_peer := m.Object()
+	// 	limit := m.Int()
+	// 	r = TL_messages_getDialogs{
+	// 		Flags:          flags,
+	// 		Exclude_pinned: exclude_pinned,
+	// 		Offset_date:    offset_date,
+	// 		Offset_id:      offset_id,
+	// 		Offset_peer:    offset_peer,
+	// 		Limit:          limit,
+	// 	}
 	case crc_messages_getHistory:
 		r = TL_messages_getHistory{
 			Peer:        m.Object(),
